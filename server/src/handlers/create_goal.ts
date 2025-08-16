@@ -1,21 +1,49 @@
+import { db } from '../db';
+import { goalsTable, usersTable } from '../db/schema';
 import { type CreateGoalInput, type Goal } from '../schema';
+import { eq } from 'drizzle-orm';
 
 export const createGoal = async (input: CreateGoalInput): Promise<Goal> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is creating a new goal and persisting it in the database.
-    // It should validate employee/manager relationships and set appropriate status.
-    return Promise.resolve({
-        id: 0, // Placeholder ID
+  try {
+    // Validate employee exists
+    const employee = await db.select()
+      .from(usersTable)
+      .where(eq(usersTable.id, input.employee_id))
+      .execute();
+
+    if (employee.length === 0) {
+      throw new Error('Employee not found');
+    }
+
+    // Validate manager exists if provided
+    if (input.manager_id) {
+      const manager = await db.select()
+        .from(usersTable)
+        .where(eq(usersTable.id, input.manager_id))
+        .execute();
+
+      if (manager.length === 0) {
+        throw new Error('Manager not found');
+      }
+    }
+
+    // Insert goal record
+    const result = await db.insert(goalsTable)
+      .values({
         title: input.title,
         description: input.description,
-        status: 'Draft',
         priority: input.priority,
         employee_id: input.employee_id,
         manager_id: input.manager_id,
         due_date: input.due_date,
-        completed_date: null,
-        approval_date: null,
-        created_at: new Date(),
-        updated_at: new Date()
-    } as Goal);
+        status: 'Draft' // Default status for new goals
+      })
+      .returning()
+      .execute();
+
+    return result[0];
+  } catch (error) {
+    console.error('Goal creation failed:', error);
+    throw error;
+  }
 };

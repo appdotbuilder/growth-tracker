@@ -1,8 +1,18 @@
+import { db } from '../db';
+import { usersTable } from '../db/schema';
 import { type User } from '../schema';
 
 export const getUsers = async (): Promise<User[]> => {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all users from the database.
-    // It should include proper relations like manager information and direct reports.
-    return [];
+  try {
+    // Fetch all users from the database
+    const results = await db.select()
+      .from(usersTable)
+      .execute();
+
+    // Return results - no type conversion needed as all fields are already correct types
+    return results;
+  } catch (error) {
+    console.error('Failed to fetch users:', error);
+    throw error;
+  }
 };
